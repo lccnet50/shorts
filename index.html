@@ -102,6 +102,9 @@
         class="w-full pl-10 pr-4 py-2.5 rounded-xl text-sm placeholder:text-[color:var(--mist)]"
         style="background:var(--surface); border:1px solid var(--line); color:var(--paper)">
     </div>
+    <select id="monthFilter" class="px-4 py-2.5 rounded-xl text-sm sm:w-32" style="background:var(--surface); border:1px solid var(--line); color:var(--paper)">
+      <option value="">所有月份</option>
+    </select>
     <select id="regionFilter" class="px-4 py-2.5 rounded-xl text-sm sm:w-40" style="background:var(--surface); border:1px solid var(--line); color:var(--paper)">
       <option value="">所有地區</option>
     </select>
@@ -225,8 +228,13 @@
   }
 
   const regionOrder = ["北一區","北二區","桃竹區","中區","南一區","南二區"];
+  function getMonth(dateStr){
+    const m = dateStr.match(/^\d+月/);
+    return m ? m[0] : '';
+  }
 
   const searchInput = document.getElementById('searchInput');
+  const monthFilter = document.getElementById('monthFilter');
   const regionFilter = document.getElementById('regionFilter');
   const topicFilter = document.getElementById('topicFilter');
   const tableBody = document.getElementById('tableBody');
@@ -235,6 +243,13 @@
   const resultCount = document.getElementById('resultCount');
 
   function populateFilters(){
+    const months = [...new Set(courses.map(c => getMonth(c.date)))]
+      .sort((a,b) => parseInt(a) - parseInt(b));
+    months.forEach(m => {
+      const opt = document.createElement('option');
+      opt.value = m; opt.textContent = m;
+      monthFilter.appendChild(opt);
+    });
     const regions = [...new Set(courses.map(c => c.region))]
       .sort((a,b) => regionOrder.indexOf(a) - regionOrder.indexOf(b));
     regions.forEach(r => {
@@ -252,14 +267,16 @@
 
   function render(){
     const kw = searchInput.value.trim().toLowerCase();
+    const month = monthFilter.value;
     const region = regionFilter.value;
     const topic = topicFilter.value;
 
     const filtered = courses.filter(c => {
       const matchesKw = !kw || c.name.toLowerCase().includes(kw) || c.school.toLowerCase().includes(kw);
+      const matchesMonth = !month || getMonth(c.date) === month;
       const matchesRegion = !region || c.region === region;
       const matchesTopic = !topic || c.name === topic;
-      return matchesKw && matchesRegion && matchesTopic;
+      return matchesKw && matchesMonth && matchesRegion && matchesTopic;
     });
 
     resultCount.textContent = `共 ${filtered.length} 堂課`;
@@ -306,10 +323,12 @@
   }
 
   searchInput.addEventListener('input', render);
+  monthFilter.addEventListener('change', render);
   regionFilter.addEventListener('change', render);
   topicFilter.addEventListener('change', render);
   document.getElementById('clearFilters').addEventListener('click', () => {
     searchInput.value = '';
+    monthFilter.value = '';
     regionFilter.value = '';
     topicFilter.value = '';
     render();
