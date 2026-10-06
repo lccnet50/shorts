@@ -60,6 +60,18 @@
   }
 
   .empty-state{ border:1px dashed var(--line); }
+
+  .cursor-ring{
+    position:fixed; top:0; left:0; width:34px; height:34px; border-radius:50%;
+    border:2px solid var(--pink); pointer-events:none; z-index:999;
+    transform:translate(-50%,-50%); opacity:0; transition:opacity .25s ease, width .2s ease, height .2s ease, border-color .2s ease;
+    mix-blend-mode:normal;
+  }
+  .cursor-ring.is-visible{ opacity:.75; }
+  .cursor-ring.is-active{ width:22px; height:22px; border-width:3px; }
+  @media (hover:none), (pointer:coarse){
+    .cursor-ring{ display:none; }
+  }
 </style>
 </head>
 <body class="min-h-screen">
@@ -379,6 +391,38 @@
 
   populateFilters();
   render();
+</script>
+<div class="cursor-ring" id="cursorRing"></div>
+<script>
+  (function(){
+    const ring = document.getElementById('cursorRing');
+    let targetX = 0, targetY = 0, ringX = 0, ringY = 0, visible = false;
+
+    window.addEventListener('mousemove', (e) => {
+      targetX = e.clientX;
+      targetY = e.clientY;
+      if (!visible){
+        ringX = targetX; ringY = targetY;
+        ring.classList.add('is-visible');
+        visible = true;
+      }
+    });
+    window.addEventListener('mouseleave', () => {
+      ring.classList.remove('is-visible');
+      visible = false;
+    });
+    document.addEventListener('mousedown', () => ring.classList.add('is-active'));
+    document.addEventListener('mouseup', () => ring.classList.remove('is-active'));
+
+    function animate(){
+      ringX += (targetX - ringX) * 0.18;
+      ringY += (targetY - ringY) * 0.18;
+      ring.style.left = ringX + 'px';
+      ring.style.top = ringY + 'px';
+      requestAnimationFrame(animate);
+    }
+    animate();
+  })();
 </script>
 </body>
 </html>
